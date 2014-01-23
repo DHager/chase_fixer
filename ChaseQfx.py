@@ -1,7 +1,8 @@
 __author__ = 'Darien'
 
 import re
-from xml.sax.saxutils import XMLGenerator
+import StringIO
+import xml.etree.ElementTree as ET
 
 
 class FormatInfo(object):
@@ -94,37 +95,45 @@ class QfxWalker(object):
 
 
 class QfxToXml(QfxWalker):
-    def __init__(self, dest):
+    def __init__(self):
         super(QfxToXml, self).__init__()
         self.debug = False
-        self.generator = XMLGenerator(dest, 'utf-8')
+        self.stack2 = []
+        self.tree = None
 
     def handleFile(self, f):
-        self.generator.startDocument()
-        self.generator.startElement("root", {})
+        root = ET.Element("root")
+        self.tree = ET.ElementTree(root)
+        self.stack2.append(root)
         super(QfxToXml, self).handleFile(f)
-        self.generator.endElement("root")
-        self.generator.endDocument()
+        self.stack2.pop()
 
     def handleMeta(self, key, val):
         super(QfxToXml, self).handleMeta(key, val)
-        self.generator.startElement("meta", {"key": key})
-        self.generator.characters(val)
-        self.generator.endElement("meta")
+        child = ET.SubElement(self.stack2[-1], 'meta')
+        child.set("key", key)
+        child.text = val
 
     def handleStart(self, tagname):
         super(QfxToXml, self).handleStart(tagname)
-        self.generator.startElement(tagname, {})
+        child = ET.SubElement(self.stack2[-1], tagname)
+        self.stack2.append(child)
 
     def handleItem(self, tagname, content):
         super(QfxToXml, self).handleItem(tagname, content)
-        self.generator.startElement(tagname, {})
-        self.generator.characters(content)
-        self.generator.endElement(tagname)
+        child = ET.SubElement(self.stack2[-1], tagname)
+        child.text = content
 
     def handleEnd(self, tagname):
         super(QfxToXml, self).handleEnd(tagname)
-        self.generator.endElement(tagname)
+        self.stack2.pop()
+
+    def getXml(self):
+        buf = StringIO.StringIO()
+        self.tree.write(buf)
+        val = buf.getvalue()
+        buf.close()
+        return val
 
 
 class XmlToQfx:

@@ -46,8 +46,9 @@ if __name__ == "__main__":
     #cf = ChaseFixer()
     #cf.handleFile(f)
 
-    qx = QfxToXml(dest)
+    qx = QfxToXml()
     qx.handleFile(src)
+    print qx.getXml()
 
 
 
