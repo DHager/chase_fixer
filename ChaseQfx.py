@@ -3,6 +3,7 @@ __author__ = 'Darien'
 import re
 import StringIO
 import xml.etree.ElementTree as ET
+import xml.sax.saxutils as saxutils
 
 
 class FormatInfo(object):
@@ -52,7 +53,7 @@ class QfxWalker(object):
             self.handleLine(l)
 
     def handleLine(self, l):
-        l = l.strip()
+        l = l.lstrip()
         if len(l) == 0:
             return
 
@@ -78,6 +79,10 @@ class QfxWalker(object):
     def handleMeta(self, key, val):
         self.meta[key] = val
         self.echo("META: ", key, val)
+        if key == "VERSION":
+            if val != 102:
+                # Assumes SGML format for Chase files, as of Jan 2014 (version 102, charset 1252)
+                self.echo("WARN: This code has not been tested with version " + val + ".")
 
     def handleStart(self, tagname):
         self.stack.append(tagname)
@@ -122,18 +127,23 @@ class QfxToXml(QfxWalker):
     def handleItem(self, tagname, content):
         super(QfxToXml, self).handleItem(tagname, content)
         child = ET.SubElement(self.stack2[-1], tagname)
-        child.text = content
+        # Things like &amp; are already escaped in source, we don't want
+        # to accidentally double-scape them
+        child.text = saxutils.unescape(content)
 
     def handleEnd(self, tagname):
         super(QfxToXml, self).handleEnd(tagname)
         self.stack2.pop()
 
-    def getXml(self):
-        buf = StringIO.StringIO()
-        self.tree.write(buf)
-        val = buf.getvalue()
-        buf.close()
-        return val
+    def getXml(self,dest=None):
+        if dest:
+            self.tree.write(dest)
+        else:
+            buf = StringIO.StringIO()
+            self.tree.write(buf)
+            val = buf.getvalue()
+            buf.close()
+            return val
 
 
 class XmlToQfx:
