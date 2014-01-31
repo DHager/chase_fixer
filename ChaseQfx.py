@@ -1,7 +1,6 @@
 __author__ = 'Darien'
 
 import re
-import StringIO
 import xml.etree.ElementTree as ET
 import xml.sax.saxutils as saxutils
 
@@ -135,16 +134,59 @@ class QfxToXml(QfxWalker):
         super(QfxToXml, self).handleEnd(tagname)
         self.stack2.pop()
 
-    def getXml(self,dest=None):
-        if dest:
+    def write(self,dest):
             self.tree.write(dest)
-        else:
-            buf = StringIO.StringIO()
-            self.tree.write(buf)
-            val = buf.getvalue()
-            buf.close()
-            return val
+
+    def tostring(self):
+        return ET.tostring(self.tree.getroot())
 
 
-class XmlToQfx:
+class StatementWalker(object):
+    def __init__(self, root):
+        """
+        :param root:
+        :type root: xml.etree.Element
+        """
+        self.root = root
+
+    def walk(self, visitor):
+        """
+        :param visitor:
+        :type visitor: AbstractStatementVisitor
+        """
+        statementNodes = self.root.findall("./OFX/BANKMSGSRSV1/STMTTRNRS/STMTRS/BANKTRANLIST/STMTTRN")
+        for statementNode in statementNodes:
+            values = {}
+            for childNode in statementNode:
+                values[childNode.tag] = childNode.text
+
+            visitor.visit(values)
+
+            for tag in values:
+                modified = False
+                for childNode in statementNode:
+                    if childNode.tag == tag:
+                        if values.get(tag) is None:
+                            statementNode.remove(childNode)
+                        else:
+                            childNode.text = values.get(tag)
+                        modified = True
+                        break  # Assume no duplicate entries
+
+                if not modified:
+                    childNode = ET.SubElement(statementNode, tag)
+                    childNode.text = values.get(tag)
+
+
+class AbstractStatementVisitor(object):
+    def visit(self, values):
+        """
+        :param values:
+        :type values: dict
+        :raise: NotImplementedError
+        """
+        raise NotImplementedError()
+
+
+def etreeToQfx(tree,qfx):
     pass
