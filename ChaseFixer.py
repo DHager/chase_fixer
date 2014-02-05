@@ -2,9 +2,7 @@
 
 import tempfile
 import sys
-import io
 import re
-import os.path
 from ChaseQfx import QfxToXml, StatementWalker, AbstractStatementVisitor, xmlToQfxString
 import xml.etree.ElementTree as ET
 

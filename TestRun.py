@@ -1,7 +1,8 @@
 from ChaseFixer import *
+import io
+import os.path
 
 if __name__ == "__main__":
-
 
     qfxdir = "C:\\Users\\Darien\\Documents\\YNAB\\chase_export\\example\\checking\\"
 
