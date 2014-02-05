@@ -3,6 +3,7 @@ __author__ = 'Darien'
 import re
 import xml.etree.ElementTree as ET
 import xml.sax.saxutils as saxutils
+from StringIO import StringIO
 
 
 class FormatInfo(object):
@@ -134,7 +135,7 @@ class QfxToXml(QfxWalker):
         super(QfxToXml, self).handleEnd(tagname)
         self.stack2.pop()
 
-    def write(self,dest):
+    def write(self, dest):
             self.tree.write(dest)
 
     def tostring(self):
@@ -188,5 +189,36 @@ class AbstractStatementVisitor(object):
         raise NotImplementedError()
 
 
-def etreeToQfx(tree,qfx):
-    pass
+def __recur(buf, node):
+    buf.write("<")
+    buf.write(node.tag)
+    buf.write(">")
+    if node.text is not None:
+        buf.write(saxutils.escape(node.text))
+    buf.write("\n")
+    if node.tag in FormatInfo.complexTags:
+        for child in node:
+            __recur(buf, child)
+        buf.write("</")
+        buf.write(node.tag)
+        buf.write(">\n")
+
+
+def xmlToQfxString(root):
+    """
+    :param root:
+    :type root: xml.etree.Element
+    """
+    buf = StringIO()
+    buf.write("\n")
+
+    metas = root.findall("./meta")
+    for metaNode in metas:
+        buf.write(metaNode.attrib["key"])
+        buf.write(":")
+        buf.write(metaNode.text)
+        buf.write("\n")
+
+    main = root.find("./OFX")
+    __recur(buf, main)
+    return buf.getvalue()
