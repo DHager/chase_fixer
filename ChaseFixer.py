@@ -15,18 +15,22 @@ class MyStatementFixer(AbstractStatementVisitor):
 
         self.regexes = [
             (
+                # Move extra ATM withdrawal stuff to memo so that we have one payee
                 re.compile(r"^ATM WITHDRAWAL\s+(\d{6})\s+(\d{2}/\d{6})\s*(.*)$"),
                 lambda m: ("ATM WITHDRAWAL", " ".join([m.group(1), m.group(2), m.group(3)]))
             ),
             (
+                # Move extra ATM deposit stuff to memo, which is mainly location-based metadata anyway
                 re.compile(r"^ATM CHECK DEPOSIT(.*)$"),
                 lambda m: ("ATM CHECK DEPOSIT", m.group(1))
             ),
             (
+                # Fix online bill-pay where the transaction ID is (for some reason) always part of the name field
                 re.compile(r"^Online Payment (\d{10}) To (\S+) (.*)$"),
                 lambda m: (m.group(2) + m.group(3), "Online payment " + m.group(1))
             ),
             (
+                # Fix the rare transfers where the transaction ID is too early and move it to the memo.
                 re.compile(r"^Online Transfer (\d{10}) (to|from) (.*)"),
                 self._fixOnlineTransfer
             ),
