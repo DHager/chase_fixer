@@ -7,11 +7,21 @@ from ChaseQfx import QfxToXml, StatementWalker, AbstractStatementVisitor, xmlToQ
 import xml.etree.ElementTree as ET
 
 
-class MyStatementFixer(AbstractStatementVisitor):
+class CsvCorrelator(AbstractStatementVisitor):
+    def __init__(self, src, meta={}):
+        super(CsvCorrelator, self).__init__()
+        self.src = src
+        self.meta = meta
 
-    def __init__(self):
+    def visit(self, values, stmtNode):
+        pass
+
+
+class MyStatementFixer(AbstractStatementVisitor):
+    def __init__(self, meta={}):
         super(MyStatementFixer, self).__init__()
         self.debug = True
+        self.meta = meta
 
         self.regexes = [
             (
@@ -49,7 +59,7 @@ class MyStatementFixer(AbstractStatementVisitor):
             print "|" + line + "|"
         print "\n"
 
-    def visit(self, values):
+    def visit(self, values, stmtNode):
         name = values.get("NAME", "")
         memo = values.get("MEMO", "")
 
@@ -76,16 +86,20 @@ if __name__ == "__main__":
     # Set up command-line arguments
     parser = argparse.ArgumentParser(description='Attempt to fix up a Chase QFX file')
     parser.add_argument('src', type=argparse.FileType('r'),
-                        help='Filename of QFX file to read.')
+                        help='Filename of QFX file to read, usually called JPMC.QFX')
     parser.add_argument('dst', type=argparse.FileType('w'), nargs='?',
                         default=sys.stdout,
                         help='Filename of output file. If not present, prints to screen.')
     parser.add_argument('--pause', dest='pause',
                         action='store_true', default=False,
                         help='If present, the program will pause before converting its temporary XML file back to QFX.')
-    parser.add_argument('--temp', type=str, nargs='?',
+    parser.add_argument('--temp', type=str,
                         default=None, dest='temp', metavar="PATH",
                         help='Override location of temporary XML file.')
+    parser.add_argument('--csv', type=argparse.FileType('r'),
+                        default=None, dest='csvsrc', metavar="PATH",
+                        help='Optional CSV copy of the same transactions, which can be read for greater accuracy.'
+                             ' Usually called JPMC.CSV.')
     args = parser.parse_args()
 
     # Read from command-line arguments and establish some of the defaults
@@ -100,11 +114,19 @@ if __name__ == "__main__":
     # Write to temporary XML
     qx.write(file(args.temp, "wb"))
 
-    # Traverse XML file with fixup code
+    # Prepare walker for taking visitors to statements
     tree = ET.parse(args.temp)
     root = tree.getroot()
     walker = StatementWalker(root)
-    walker.walk(MyStatementFixer())
+
+    meta = {}  # For sharing information between visitors. Keyed by xml elements, payload is another dictionary.
+    if args.csvsrc is not None:
+        csv_visitor = CsvCorrelator(args.csvsrc, meta)  # Tries to acquire original name+memo string from JPMC.csv dumps
+        walker.walk(csv_visitor)
+
+    fix_visitor = MyStatementFixer(meta)  # Fix up name and memo values based on available information
+    walker.walk(fix_visitor)
+
 
     # Write our changes back to XML file
     file(args.temp, "wb").write(ET.tostring(root))

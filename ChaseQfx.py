@@ -161,7 +161,7 @@ class StatementWalker(object):
             for childNode in statementNode:
                 values[childNode.tag] = childNode.text
 
-            visitor.visit(values)
+            visitor.visit(values, statementNode)
 
             for tag in values:
                 modified = False
@@ -180,10 +180,12 @@ class StatementWalker(object):
 
 
 class AbstractStatementVisitor(object):
-    def visit(self, values):
+    def visit(self, values, stmtNode):
         """
         :param values:
         :type values: dict
+        :param stmtNode:
+        :type stmtNode: xml.etree.Element
         :raise: NotImplementedError
         """
         raise NotImplementedError()
