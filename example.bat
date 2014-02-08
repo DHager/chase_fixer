@@ -3,7 +3,7 @@
 rem Change directory to wherever you saved the CSV and QFX files
 set maindir=.\dataset\
 
-ChaseFixer.py^
+Run.py^
  --csv "%maindir%\JPMC.csv"^
  --temp "%maindir%\JPMC.xml"^
  "%maindir%\JPMC.QFX"^

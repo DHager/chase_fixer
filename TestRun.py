@@ -1,7 +1,7 @@
 """
 Used for IDE-debugging runs
 """
-from ChaseFixer import commandlineRun
+from ChaseFixer import main
 import io
 import sys
 import os.path
@@ -29,5 +29,5 @@ if __name__ == "__main__":
         "dst": io.open(dst, "w", encoding="cp1252")
     })
 
-    commandlineRun(args)
+    main(args)
 

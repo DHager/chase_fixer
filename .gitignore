@@ -1,5 +1,7 @@
 .idea
 ChaseBanking.iml
 
-dataset
+dataset/*.qfx
+dataset/*.xml
+dataset/*.csv
 *.pyc
