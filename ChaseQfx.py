@@ -136,7 +136,7 @@ class QfxToXml(QfxWalker):
         self.stack2.pop()
 
     def write(self, dest):
-            self.tree.write(dest)
+            self.tree.write(dest, encoding='utf-8')
 
     def tostring(self):
         return ET.tostring(self.tree.getroot())
@@ -212,7 +212,7 @@ def xmlToQfxString(root):
     :type root: xml.etree.Element
     """
     buf = StringIO()
-    buf.write("\n")
+    buf.write(u"\n")  # Having the "u" for unicode primes the StringIO to expect unicode from now on
 
     metas = root.findall("./meta")
     for metaNode in metas:

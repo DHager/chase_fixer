@@ -1,4 +1,8 @@
+"""
+Used for IDE-debugging runs
+"""
 from ChaseFixer import commandlineRun
+import io
 import sys
 import os.path
 
@@ -10,7 +14,7 @@ class AttrDict(dict):
 
 if __name__ == "__main__":
 
-    qfxdir = "C:\\Users\\Darien\\Documents\\YNAB\\chase_export\\example\\checking\\"
+    qfxdir = "./dataset/"
 
     src = os.path.join(qfxdir, "JPMC.qfx")
     csv = os.path.join(qfxdir, "JPMC.csv")
@@ -20,9 +24,9 @@ if __name__ == "__main__":
     args = AttrDict({
         "pause": False,
         "temp": mid,
-        "csvsrc": open(csv, "rb"),
-        "src": open(src, "r"),  # WARNING: RB mode breaks
-        "dst": sys.stdout  # open(dst,"wb"),
+        "csvsrc": io.open(csv, "r"),
+        "src": io.open(src, "r", encoding="cp1252"),
+        "dst": io.open(dst, "w", encoding="cp1252")
     })
 
     commandlineRun(args)
