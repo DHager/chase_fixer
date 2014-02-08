@@ -10,6 +10,15 @@ import xml.etree.ElementTree as ET
 
 __author__ = 'Darien Hager'
 
+
+def print_debug_linelengths(self, lines):
+    print " 00000000001111111111222222222233 "
+    print " 01234567890123456789012345678901 "
+    for line in lines:
+        print "|" + line + "|"
+    print "\n"
+
+
 class CsvCorrelator(AbstractStatementVisitor):
     def __init__(self, src):
         super(CsvCorrelator, self).__init__()
@@ -58,7 +67,7 @@ class CsvCorrelator(AbstractStatementVisitor):
                 continue
 
             # Ignore case...
-            csvStr= row[self.fieldNames["DESC"]].lower()
+            csvStr = row[self.fieldNames["DESC"]].lower()
             qfxStr = (name + memo).lower()
 
             # Ignore whitespace...
@@ -98,46 +107,59 @@ class CsvCorrelator(AbstractStatementVisitor):
 
 
 class MyStatementFixer(AbstractStatementVisitor):
-    def __init__(self, matchingRows={}):
+    def __init__(self, matchingRows=None):
         super(MyStatementFixer, self).__init__()
         self.debug = True
+        if matchingRows is None:
+            matchingRows = {}
         self.matchingRows = matchingRows
 
+        # In order of testing. Put "strict" versions that expect good data ahead of "last-ditch-effort" ones
         self.regexes = [
             (
                 # Move extra ATM withdrawal stuff to memo so that we have one payee
-                re.compile(r"^ATM WITHDRAWAL\s+(\d{6})\s+(\d{2}/\d{6})\s*(.*)$"),
-                lambda m: ("ATM WITHDRAWAL", " ".join([m.group(1), m.group(2), m.group(3)]))
-            ),
-            (
-                # Move extra ATM deposit stuff to memo, which is mainly location-based metadata anyway
-                re.compile(r"^ATM CHECK DEPOSIT(.*)$"),
-                lambda m: ("ATM CHECK DEPOSIT", m.group(1))
-            ),
-            (
+                # ex> ATM WITHDRAWAL                       123456  12/3110550 NE ST'
+                r"^ATM WITHDRAWAL\s+(\d{6})\s+(\d{2}/\d{2})(.*)$",
+                lambda m: ("ATM Withdrawal", "%s %s %s" % m.group(1, 2, 3))
+            ), (
+                # Move extra ATM deposit stuff to memo, which is mainly date/location data
+                # ex> ATM CHECK DEPOSIT 12/31 123 SW 123TH STREET CITY WA
+                r"^ATM CHECK DEPOSIT(.*)$",
+                lambda m: ("ATM Check Deposit", m.group(1))
+            ), (
+                # (Expects CSV-quality description)
                 # Fix online bill-pay where the transaction ID is (for some reason) always part of the name field
-                re.compile(r"^Online Payment (\d{10}) To (.*?) (\d\d/\d\d)$"),
-                lambda m: (m.group(2), "Online payment " + m.group(1) + " on " + m.group(3))
-            ),
-            (
+                # ex>
+                r"^Online Payment (\d{10}) To (.*?) (\d\d/\d\d)$",
+                lambda m: (m.group(2), "Online payment %s on %s" % m.group(1, 3))
+            ), (
+                # (Expects CSV-quality description)
+                # Fix the rare transfers where the transaction ID is too early and duplicated.
+                # End date may or may not be present.
+                # ex> 'Online Transfer 1234567890 to Otherbank ########1234 transaction #: 1234567890 12/31'
+                r"^Online Transfer (\d{10}) (to|from) (.+?) transaction\s*#:\s*(\d{10})(.*)$",
+                lambda m: (m.group(3), "Transfer (%s) trans# %s or %s %s" % m.group(2, 1, 4, 5))
+            ), (
                 # Fix the rare transfers where the transaction ID is too early and move it to the memo.
-                re.compile(r"^Online Transfer (\d{10}) (to|from) (.*)"),
-                self._fixOnlineTransfer
-            ),
-
+                # ex> Online Transfer to SAV ...1234 transaction#: 1234567890 12/23
+                r"^Online Transfer (\d{10}) (to|from) (.*)$",
+                lambda m: ("Online transfer %s %s" % m.group(2, 3), m.group(1))
+            ), (
+                # Pull out payee from transfers
+                # End date may or may not be present.
+                # ex> Online Transfer to SAV ...1234 transaction#: 1234567890 12/23
+                r"^Online Transfer (to|from) (.+?)\s+transaction\s*#:\s*(\d{10})(.*)$",
+                lambda m: (m.group(2), "Online Transfer (%s) trans# %s %s" % m.group(1, 3, 4))
+            ), (
+                # (Expects CSV-quality description)
+                # ex> 'Credit Return: Online Payment 1234567890 To Somebody'
+                r"^Credit Return: Online Payment (\d{10}) To (.*)$",
+                lambda m: (m.group(2), "Credit return from online payment %s" % m.group(1))
+            )
         ]
 
-    def _fixOnlineTransfer(self, m):
-        name = "Online transfer " + m.group(2) + " " + m.group(3)
-        memo = m.group(1)
-        return name, memo
-
-    def _display32(self, lines):
-        print " 00000000001111111111222222222233 "
-        print " 01234567890123456789012345678901 "
-        for line in lines:
-            print "|" + line + "|"
-        print "\n"
+        # Compile regex strings
+        self.regexes = [(re.compile(pat, re.IGNORECASE), func) for (pat, func) in self.regexes]
 
     def visit(self, values, stmtNode):
         row = None
