@@ -149,22 +149,26 @@ class MyStatementFixer(AbstractStatementVisitor):
 
         if row is not None:
             combined = row['Description']
-            # Just in case we don't match anything, re-implement Chase's splitting but
-            # without the whitespace trim or truncation
-            splitpoint = min(32, len(combined))
-            name = combined[0:splitpoint]
-            memo = combined[splitpoint:]
-            pass
         else:
             if len(name) > 32:
                 raise Exception("Unexpected name of >32 chars")
             combined = name + " " + memo
 
+        fixedUp = False
         for (rex, func) in self.regexes:
             matches = rex.match(combined)
             if matches:
                 (name, memo) = func(matches)
+                fixedUp = True
                 break
+
+        if not fixedUp and row is not None:
+            # Just in case we don't match anything but DO have CSV data,
+            # re-implement Chase's splitting but without the problematic
+            # whitespace trim or post-64-char truncation
+            splitpoint = min(32, len(combined))
+            name = combined[0:splitpoint]
+            memo = combined[splitpoint:]
 
         values["NAME"] = name
         values["MEMO"] = memo
