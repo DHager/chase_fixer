@@ -2,15 +2,18 @@ from gettext import gettext
 import io
 import sys
 import argparse
+import tempfile
+import xml.etree.ElementTree as ET
 
-from fixer import process
+from qfxtoxml import QfxToXml, StatementWalker, xmlToQfxString
+from fixer import CsvCorrelator, MyStatementFixer
 
 __author__ = 'Darien Hager'
 
 
 class EncodingAwareFileType(object):
     """
-    Hacked up version of argparse.FileType that takes an encoding and uses io.open
+    Subtly hacked up version of argparse.FileType that takes an encoding and uses io.open
     """
     def __init__(self, mode='r', bufsize=-1, encoding="utf-8"):
         self._mode = mode
@@ -40,8 +43,7 @@ class EncodingAwareFileType(object):
         args_str = ', '.join(repr(arg) for arg in args if arg != -1)
         return '%s(%s)' % (type(self).__name__, args_str)
 
-
-def main():
+def shell_entry():
     # Set up command-line arguments
     parser = argparse.ArgumentParser(description='Attempt to fix up a Chase QFX file')
     parser.add_argument('src', type=EncodingAwareFileType('r', encoding="cp1252"),
@@ -63,7 +65,48 @@ def main():
     # Parse arguments, throwing an error if necessary
     args = parser.parse_args()
     # If everything looks OK, jump to main program logic
-    process(args);
+    main(args);
+
+
+def main(args):
+    if args.temp is None:
+        (handle, tempPath) = tempfile.mkstemp(suffix=".xml")
+        args.temp = tempPath
+
+    # Read QFX file
+    qx = QfxToXml()
+    qx.handleFile(args.src)
+
+    # Write to temporary XML
+    qx.write(io.open(args.temp, "wb"))
+
+    # Prepare walker for taking visitors to statements
+    tree = ET.parse(args.temp)
+    root = tree.getroot()
+    walker = StatementWalker(root)
+
+    matchedRows = {}
+    if args.csvsrc is not None:
+        csv_visitor = CsvCorrelator(args.csvsrc)  # Tries to acquire original name+memo string from JPMC.csv dumps
+        walker.walk(csv_visitor)
+        matchedRows = csv_visitor.getMatchedRows()
+
+    fix_visitor = MyStatementFixer(matchedRows)  # Fix up name and memo values based on available information
+    walker.walk(fix_visitor)
+
+    # Write our changes back to XML file
+    changedXmlString = ET.tostring(root);
+    io.open(args.temp, "w", encoding='utf-8').write(unicode(changedXmlString))
+
+    # Maybe give user a chance to modify the XML before we translate it back
+    if args.pause:
+        print "Temporary file located at: " + args.temp
+        raw_input("Pausing in case you want to modify it with other tools. Press enter to continue...")
+        pass
+
+    # Convert XML to QFX and save the result
+    args.dst.write(xmlToQfxString(root))
 
 if __name__ == "__main__":
-    main()
+    shell_entry()
+

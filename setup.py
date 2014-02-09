@@ -9,7 +9,7 @@ setup(
     name = "chasefixer",
     version = "0.5.0",
     author = "Darien Hager",
-    author_email = "project+chasefix@technofovea.com",
+    author_email = "project+chasefixer@technofovea.com",
     description = "Scripts to clean up Chase QFX transaction files.",
     license = "Creative Commons Attribution-ShareAlike 4.0 International License",
     keywords = "jp morgan chase qfx quicken ofx account transaction xml",
@@ -22,6 +22,6 @@ setup(
         "Environment :: Console",
         ],
     entry_points = {
-        'console_scripts': ['fixchaseqfx=chase_fixer.command_line:main'],
+        'console_scripts': ['fixchaseqfx=chase_fixer.command_line:shell_entry'],
         }
     )

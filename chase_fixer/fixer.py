@@ -1,9 +1,6 @@
-import io
 import copy
 import csv
-import tempfile
 import re
-import xml.etree.ElementTree as ET
 
 from qfxtoxml import QfxToXml, StatementWalker, AbstractStatementVisitor, xmlToQfxString
 
@@ -194,45 +191,3 @@ class MyStatementFixer(AbstractStatementVisitor):
 
         values["NAME"] = name
         values["MEMO"] = memo
-
-
-def process(args):
-
-    if args.temp is None:
-        (handle, tempPath) = tempfile.mkstemp(suffix=".xml")
-        args.temp = tempPath
-
-    # Read QFX file
-    qx = QfxToXml()
-    qx.handleFile(args.src)
-
-    # Write to temporary XML
-    qx.write(io.open(args.temp, "wb"))
-
-    # Prepare walker for taking visitors to statements
-    tree = ET.parse(args.temp)
-    root = tree.getroot()
-    walker = StatementWalker(root)
-
-    matchedRows = {}
-    if args.csvsrc is not None:
-        csv_visitor = CsvCorrelator(args.csvsrc)  # Tries to acquire original name+memo string from JPMC.csv dumps
-        walker.walk(csv_visitor)
-        matchedRows = csv_visitor.getMatchedRows()
-
-    fix_visitor = MyStatementFixer(matchedRows)  # Fix up name and memo values based on available information
-    walker.walk(fix_visitor)
-
-    # Write our changes back to XML file
-    changedXmlString = ET.tostring(root);
-    io.open(args.temp, "w", encoding='utf-8').write(unicode(changedXmlString))
-
-    # Maybe give user a chance to modify the XML before we translate it back
-    if args.pause:
-        print "Temporary file located at: " + args.temp
-        raw_input("Pausing in case you want to modify it with other tools. Press enter to continue...")
-        pass
-
-    # Convert XML to QFX and save the result
-    args.dst.write(xmlToQfxString(root))
-
