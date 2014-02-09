@@ -4,7 +4,7 @@ Used for IDE-debugging runs
 import io
 import os.path
 
-from chase_fixer.ChaseFixer import mainProcess
+from chase_fixer.fixer import process
 
 
 class AttrDict(dict):
@@ -29,5 +29,5 @@ if __name__ == "__main__":
         "dst": io.open(dst, "w", encoding="cp1252")
     })
 
-    main(args)
+    process(args)
 

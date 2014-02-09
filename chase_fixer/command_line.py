@@ -1,47 +1,47 @@
 from gettext import gettext
 import io
 import sys
+import argparse
 
-from chase_fixer.ChaseFixer import main
-
+from fixer import process
 
 __author__ = 'Darien Hager'
-if __name__ == "__main__":
 
-    import argparse
 
-    class EncodingAwareFileType(object):
-        """
-        Hacked up version of argparse.FileType that takes an encoding and uses io.open
-        """
-        def __init__(self, mode='r', bufsize=-1, encoding="utf-8"):
-            self._mode = mode
-            self._bufsize = bufsize
-            self._encoding = encoding
+class EncodingAwareFileType(object):
+    """
+    Hacked up version of argparse.FileType that takes an encoding and uses io.open
+    """
+    def __init__(self, mode='r', bufsize=-1, encoding="utf-8"):
+        self._mode = mode
+        self._bufsize = bufsize
+        self._encoding = encoding
 
-        def __call__(self, string):
-            # the special argument "-" means sys.std{in,out}
-            if string == '-':
-                if 'r' in self._mode:
-                    return sys.stdin
-                elif 'w' in self._mode:
-                    return sys.stdout
-                else:
-                    msg = gettext('argument "-" with mode %r') % self._mode
-                    raise ValueError(msg)
+    def __call__(self, string):
+        # the special argument "-" means sys.std{in,out}
+        if string == '-':
+            if 'r' in self._mode:
+                return sys.stdin
+            elif 'w' in self._mode:
+                return sys.stdout
+            else:
+                msg = gettext('argument "-" with mode %r') % self._mode
+                raise ValueError(msg)
 
-            # all other arguments are used as file names
-            try:
-                return io.open(string, self._mode, self._bufsize, encoding=self._encoding)
-            except IOError as e:
-                message = gettext("can't open '%s': %s")
-                raise argparse.ArgumentTypeError(message % (string, e))
+        # all other arguments are used as file names
+        try:
+            return io.open(string, self._mode, self._bufsize, encoding=self._encoding)
+        except IOError as e:
+            message = gettext("can't open '%s': %s")
+            raise argparse.ArgumentTypeError(message % (string, e))
 
-        def __repr__(self):
-            args = self._mode, self._bufsize
-            args_str = ', '.join(repr(arg) for arg in args if arg != -1)
-            return '%s(%s)' % (type(self).__name__, args_str)
+    def __repr__(self):
+        args = self._mode, self._bufsize
+        args_str = ', '.join(repr(arg) for arg in args if arg != -1)
+        return '%s(%s)' % (type(self).__name__, args_str)
 
+
+def main():
     # Set up command-line arguments
     parser = argparse.ArgumentParser(description='Attempt to fix up a Chase QFX file')
     parser.add_argument('src', type=EncodingAwareFileType('r', encoding="cp1252"),
@@ -63,4 +63,7 @@ if __name__ == "__main__":
     # Parse arguments, throwing an error if necessary
     args = parser.parse_args()
     # If everything looks OK, jump to main program logic
-    main(args);
+    process(args);
+
+if __name__ == "__main__":
+    main()

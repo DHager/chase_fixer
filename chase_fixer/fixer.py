@@ -5,7 +5,7 @@ import tempfile
 import re
 import xml.etree.ElementTree as ET
 
-from chase_fixer.qfxtoxml import QfxToXml, StatementWalker, AbstractStatementVisitor, xmlToQfxString
+from qfxtoxml import QfxToXml, StatementWalker, AbstractStatementVisitor, xmlToQfxString
 
 
 __author__ = 'Darien Hager'
