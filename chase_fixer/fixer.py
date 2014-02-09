@@ -1,12 +1,12 @@
-#!/usr/bin/python
-
 import io
 import copy
 import csv
 import tempfile
 import re
-from ChaseQfx import QfxToXml, StatementWalker, AbstractStatementVisitor, xmlToQfxString
 import xml.etree.ElementTree as ET
+
+from chase_fixer.qfxtoxml import QfxToXml, StatementWalker, AbstractStatementVisitor, xmlToQfxString
+
 
 __author__ = 'Darien Hager'
 
@@ -196,7 +196,7 @@ class MyStatementFixer(AbstractStatementVisitor):
         values["MEMO"] = memo
 
 
-def main(args):
+def process(args):
 
     if args.temp is None:
         (handle, tempPath) = tempfile.mkstemp(suffix=".xml")

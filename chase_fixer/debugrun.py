@@ -1,10 +1,10 @@
 """
 Used for IDE-debugging runs
 """
-from ChaseFixer import main
 import io
-import sys
 import os.path
+
+from chase_fixer.ChaseFixer import mainProcess
 
 
 class AttrDict(dict):

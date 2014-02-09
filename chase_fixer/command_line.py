@@ -1,7 +1,9 @@
-from ChaseFixer import main
 from gettext import gettext
 import io
 import sys
+
+from chase_fixer.ChaseFixer import main
+
 
 __author__ = 'Darien Hager'
 if __name__ == "__main__":
