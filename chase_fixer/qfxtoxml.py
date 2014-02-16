@@ -136,7 +136,7 @@ class QfxToXml(QfxWalker):
         self.stack2.pop()
 
     def write(self, dest):
-            self.tree.write(dest, encoding='utf-8')
+        self.tree.write(dest, encoding='utf-8')
 
     def tostring(self):
         return ET.tostring(self.tree.getroot())

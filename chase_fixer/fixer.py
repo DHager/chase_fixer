@@ -2,13 +2,13 @@ import copy
 import csv
 import re
 
-from qfxtoxml import QfxToXml, StatementWalker, AbstractStatementVisitor, xmlToQfxString
+from qfxtoxml import AbstractStatementVisitor
 
 
 __author__ = 'Darien Hager'
 
 
-def print_debug_linelengths(self, lines):
+def print_debug_linelengths(lines):
     print " 00000000001111111111222222222233 "
     print " 01234567890123456789012345678901 "
     for line in lines:
@@ -71,7 +71,7 @@ class CsvCorrelator(AbstractStatementVisitor):
             csvStr = re.sub(wsRe, '', csvStr)
             qfxStr = re.sub(wsRe, '', qfxStr)
 
-            assert(len(qfxStr) <= len(csvStr))
+            assert (len(qfxStr) <= len(csvStr))
             # Compare that one is inside the other
             if csvStr.find(qfxStr, 0, len(qfxStr)) < 0:
                 continue
@@ -95,7 +95,7 @@ class CsvCorrelator(AbstractStatementVisitor):
         )
         if row is None:
             self.matchingRows[stmtNode] = None
-            return  # Should this get logged?
+            return # Should this get logged?
 
         self.matchingRows[stmtNode] = row
 

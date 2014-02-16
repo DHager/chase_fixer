@@ -15,6 +15,7 @@ class EncodingAwareFileType(object):
     """
     Subtly hacked up version of argparse.FileType that takes an encoding and uses io.open
     """
+
     def __init__(self, mode='r', bufsize=-1, encoding="utf-8"):
         self._mode = mode
         self._bufsize = bufsize
@@ -42,6 +43,7 @@ class EncodingAwareFileType(object):
         args = self._mode, self._bufsize
         args_str = ', '.join(repr(arg) for arg in args if arg != -1)
         return '%s(%s)' % (type(self).__name__, args_str)
+
 
 def shell_entry():
     # Set up command-line arguments
@@ -107,6 +109,6 @@ def main(args):
     # Convert XML to QFX and save the result
     args.dst.write(xmlToQfxString(root))
 
+
 if __name__ == "__main__":
     shell_entry()
-

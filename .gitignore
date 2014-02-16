@@ -1,7 +1,11 @@
-.idea
-ChaseBanking.iml
+/.idea
+/ChaseBanking.iml
 
-dataset/*.qfx
-dataset/*.xml
-dataset/*.csv
+/testdata/*.qfx
+/testdata/*.xml
+/testdata/*.csv
+
 *.pyc
+/build
+/dist
+/Chase_QFX_Fixer.egg-info
