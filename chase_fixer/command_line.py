@@ -34,6 +34,7 @@ class EncodingAwareFileType(object):
 
         # all other arguments are used as file names
         try:
+            # noinspection PyArgumentList
             return io.open(string, self._mode, self._bufsize, encoding=self._encoding)
         except IOError as e:
             message = gettext("can't open '%s': %s")
@@ -67,7 +68,7 @@ def shell_entry():
     # Parse arguments, throwing an error if necessary
     args = parser.parse_args()
     # If everything looks OK, jump to main program logic
-    main(args);
+    main(args)
 
 
 def main(args):
@@ -97,7 +98,8 @@ def main(args):
     walker.walk(fix_visitor)
 
     # Write our changes back to XML file
-    changedXmlString = ET.tostring(root);
+    changedXmlString = ET.tostring(root)
+    # noinspection PyArgumentList
     io.open(args.temp, "w", encoding='utf-8').write(unicode(changedXmlString))
 
     # Maybe give user a chance to modify the XML before we translate it back

@@ -21,6 +21,7 @@ if __name__ == "__main__":
     mid = os.path.join(qfxdir, "JPMC.xml")
     dst = os.path.join(qfxdir, "JPMC_fixed.qfx")
 
+    # noinspection PyArgumentList
     args = AttrDict({
         "pause": False,
         "temp": mid,
